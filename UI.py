@@ -6,7 +6,7 @@ from con_sql import *
 
 root = tb.Window(themename="cerculean")
 colors = root.style.colors
-root.geometry("1000x500")
+root.geometry("1160x550")
 
 navbar = tb.Frame(root)
 navbar.place(x=10, y=0)
@@ -68,19 +68,22 @@ def get_row():
     client_form(data = get_client_id(row_id))
 
 def client_form(data):
-    # print(data)
     global main
     destroy_main()
-    main = tb.Frame(root, style=INFO)
+    main = tb.Frame(root, style=PRIMARY)
     main.pack(padx=(170,10), pady=(0,10), fill=BOTH, expand=TRUE)
 
-    style = tb.Style()
-    primary_color = style.colors.primary
-    style.configure("Custom.TFrame", background="gray", foreground="white")
-    style.configure("Custom.TLabel", background=primary_color, foreground="white")
+    # main = ScrolledFrame(root, autohide=False, style=PRIMARY)
+    # main.pack(padx=(170,10), pady=(0,10), fill=BOTH, expand=TRUE)
 
-    frame1 = tb.Frame(main, style="Custom.TLabel")
-    frame1.pack(padx=(10,5), pady=(10,0), anchor="w")
+    style = tb.Style()
+    style.configure("Custom.TLabel", background="#225384", foreground="white")
+
+    info_label = tb.Label(main, text="Personal Info", width=20, foreground="white", background="#4bb1ea", font=("Calibri",15,"bold"))
+    info_label.grid(row=0, column=0, padx=10, pady=(10,0), sticky="nsew")
+
+    frame1 = tb.Frame(main, style=INFO)
+    frame1.grid(row=1, column=0, padx=10, pady=0, sticky="nsew")
 
     for i, (key, value) in enumerate(data.items()):
         label = tb.Label(frame1, text=key.replace('_', ' ').title() + ":", font=("Arial", 12, "bold"), style="Custom.TLabel")
@@ -89,15 +92,48 @@ def client_form(data):
         value_label = tb.Label(frame1, text=str(value), font=("Arial", 12),style="Custom.TLabel")
         value_label.grid(row=i, column=1, sticky='w', padx=5, pady=2)
 
-    btn_frame = tb.Frame(main)
-    btn_frame.pack(padx=10, pady=10, anchor="w")
+    btn_frame = tb.Frame(main, width=200, style=PRIMARY)
+    btn_frame.grid(row=2, column=0, padx=10, pady=5, sticky="nsew")
 
-    back = tb.Button(btn_frame, text="Back",  bootstyle=INFO)
-    back.grid(row=0, column=0, padx=5, pady=5)
+    back = tb.Button(btn_frame, text="Back", width=15, style=INFO)
+    back.grid(row=0, column=0, padx=(10,20), pady=5, sticky="we")
     back.bind("<Button-1>", lambda e: load_client())
-    edit = tb.Button(btn_frame, text="Edit",  bootstyle=INFO)
-    edit.grid(row=0, column=1, padx=5, pady=5)
-    edit.bind("<Button-1>", lambda e: edit_form(data))  
+
+    edit = tb.Button(btn_frame, text="Edit", width=15,  style=INFO)
+    edit.grid(row=0, column=1, padx=(20,10), pady=5, sticky="we")
+    edit.bind("<Button-1>", lambda e: edit_form(data))
+
+    v_bar1 = tb.Frame(main, style=PRIMARY)
+    v_bar1.grid(row=0, column=1, rowspan=3, sticky="nsew")
+
+    acc_label = tb.Label(v_bar1, text="Accessories",  foreground="white", background="#4bb1ea", font=("Calibri",15,"bold"))
+    acc_label.grid(row=0, column=0,  pady=(10,0), sticky="nsew")
+
+    acc_frame = tb.Frame(v_bar1, style=INFO, height=200, width=300)
+    acc_frame.grid(row=1, column=0,  pady=(0,10), sticky="nsew")
+
+    pay_label = tb.Label(v_bar1, text="Payments", width=20, foreground="white", background="#4bb1ea", font=("Calibri",15,"bold"))
+    pay_label.grid(row=2, column=0, pady=(10,0), sticky="nsew")
+
+    pay_frame = tb.Frame(v_bar1, style=INFO, height=240)
+    pay_frame.grid(row=3, column=0, pady=(0,10), sticky="nsew")
+
+    v_bar2 = tb.Frame(main, style=PRIMARY)
+    v_bar2.grid(row=0, column=2, rowspan=3, padx=10, sticky="nsew")
+
+    date_label = tb.Label(v_bar2, text="Date", foreground="white", background="#4bb1ea", font=("Calibri",15,"bold"))
+    date_label.grid(row=0, column=0, pady=(10,0), sticky="nsew")
+
+    date_frame = tb.Frame(v_bar2, style=INFO, height=200, width=300,)
+    date_frame.grid(row=1, column=0, pady=(0,10), sticky="nsew")
+
+    trans_label = tb.Label(v_bar2, text="Transaction History", width=20, foreground="white", background="#4bb1ea", font=("Calibri",15,"bold"))
+    trans_label.grid(row=2, column=0,pady=(10,0), sticky="nsew")
+
+    trans_frame = tb.Frame(v_bar2, style=INFO, height=240)
+    trans_frame.grid(row=3, column=0, pady=(0,10), sticky="nsew")
+
+
 
 def edit_form(data):
     global main
@@ -161,8 +197,6 @@ def edit_form(data):
     cancel.bind("<Button-1>", lambda e: client_form(data))
 
     return entries
-
-# def save_changes():
 
 
 def load_sales():
