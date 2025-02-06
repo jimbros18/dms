@@ -68,10 +68,10 @@ def get_row():
     client_form(data = get_client_id(row_id))
 
 def client_form(data):
+    # print(data)
     global main
     destroy_main()
-    
-    main = tb.Frame(root, style=PRIMARY)
+    main = tb.Frame(root, style=INFO)
     main.pack(padx=(170,10), pady=(0,10), fill=BOTH, expand=TRUE)
 
     style = tb.Style()
@@ -89,32 +89,30 @@ def client_form(data):
         value_label = tb.Label(frame1, text=str(value), font=("Arial", 12),style="Custom.TLabel")
         value_label.grid(row=i, column=1, sticky='w', padx=5, pady=2)
 
-    btn_frame = tb.Frame(main, style="Custom.TLabel")
-    btn_frame.pack(padx=10, pady=(10,0), anchor='w' )
+    btn_frame = tb.Frame(main)
+    btn_frame.pack(padx=10, pady=10, anchor="w")
 
+    back = tb.Button(btn_frame, text="Back",  bootstyle=INFO)
+    back.grid(row=0, column=0, padx=5, pady=5)
+    back.bind("<Button-1>", lambda e: load_client())
     edit = tb.Button(btn_frame, text="Edit",  bootstyle=INFO)
-    edit.grid(row=0, column=0, padx=5, pady=5)
-    edit.bind("<Button-1>", lambda e: edit_form(data))
-    save = tb.Button(btn_frame, text="Save",  bootstyle=INFO)
-    save.grid(row=0, column=1, padx=5, pady=5)
+    edit.grid(row=0, column=1, padx=5, pady=5)
+    edit.bind("<Button-1>", lambda e: edit_form(data))  
 
 def edit_form(data):
     global main
+    # print(data)
     destroy_main()
 
-    # Create the main frame
-    main = tb.Frame(root, style=SUCCESS)
+    main = tb.Frame(root, style=INFO)
     main.pack(padx=(170, 10), pady=(0, 10), fill=BOTH, expand=True)
 
-    # Create a ScrolledFrame inside main
-    scrollable_frame = ScrolledFrame(main, autohide=True, style=PRIMARY)
-    scrollable_frame.pack(fill=BOTH, expand=True, padx=5, pady=5)
+    scrollable_frame = ScrolledFrame(main, autohide=True, style=INFO)
+    scrollable_frame.place(x=0, y=0, relwidth=1, relheight=1)
 
-    # Get the inner frame to place widgets
     in_sframe = tb.Frame(scrollable_frame, style=WARNING)
     in_sframe.pack(fill=BOTH, expand=True, padx=5, pady=5)
 
-    # Configure styles
     style = tb.Style()
     primary_color = style.colors.primary
     style.configure("Custom.TFrame", background="gray")
@@ -124,33 +122,47 @@ def edit_form(data):
     # Store entry fields
     entries = {}
 
+    def check_changes(*args):
+        for key, entry in entries.items():
+            if entry.get() != str(data[key]):  # Check if entry is modified
+                save.config(state="normal")  # Enable Save button
+                return
+        save.config(state="disabled")  # Disable Save button if no changes
+
     for i, (key, value) in enumerate(data.items()):
-        # Label for field name
         label = tb.Label(in_sframe, text=key.replace('_', ' ').title() + ":", 
                          font=("Arial", 12, "bold"), style="Custom.TLabel")
         label.grid(row=i, column=0, sticky="w", padx=5, pady=2)
 
-        # Entry field with pre-filled value
         entry = tb.Entry(in_sframe, font=("Arial", 10), style="Custom.TEntry")
         entry.insert(0, str(value))  # Set the existing value
         entry.grid(row=i, column=1, sticky="w", padx=5, pady=2)
 
-        entries[key] = entry  # Store entry for later use
+        entry.bind("<KeyRelease>", check_changes)  # Detect changes in entry field
+        entries[key] = entry
 
-    # Buttons
+    
+    def n_data():
+        """Extracts updated values and prints them."""
+        new_data = {key: entry.get() for key, entry in entries.items()}
+        print(new_data)  # Now this will print the latest values
+        # client_form(new_data)  # Call next function with updated data
+        return new_data
+    
     btn_frame = tb.Frame(in_sframe, style=PRIMARY)
     btn_frame.grid(row=len(data), column=0, columnspan=2, pady=10, sticky="w")
 
-    save = tb.Button(btn_frame, text="Save", bootstyle=INFO)
+    save = tb.Button(btn_frame, text="Save", bootstyle=INFO, state=DISABLED)
     save.pack(side=LEFT, padx=5)
-    save.bind("<Button-1>", lambda e: destroy_main())
+    save.bind("<Button-1>", lambda e: [update_info(n_data()),client_form(n_data())])
 
     cancel = tb.Button(btn_frame, text="Cancel", bootstyle=INFO)
     cancel.pack(side=LEFT, padx=5)
-    cancel.bind("<Button-1>", lambda e: destroy_main())
+    cancel.bind("<Button-1>", lambda e: client_form(data))
 
-    return entries  # Return entries for later use
+    return entries
 
+# def save_changes():
 
 
 def load_sales():
