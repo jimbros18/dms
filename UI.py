@@ -2,6 +2,10 @@ import ttkbootstrap as tb
 from ttkbootstrap.tableview import Tableview
 from ttkbootstrap.constants import *
 from ttkbootstrap.scrolled import ScrolledFrame
+from ttkbootstrap.dialogs import DatePickerDialog
+from ttkbootstrap.widgets import DateEntry
+from datetime import datetime
+
 from con_sql import *
 
 root = tb.Window(themename="cerculean")
@@ -13,6 +17,17 @@ main = None
 table = None
 row_id = None
 entry_widgets = []
+
+fields = ['id', 'First Name', 'Middle Name', 'Last Name', 'Nickname', 'birthdate', 'deathdate',
+          'Address', 'Age', 'Religion', 'Coffin', 'Amount', 'Gov. Assistance',
+          'Mortuary Plan', 'Mortuary Plan Amount', 'Accessories']
+
+def select_date(widget):
+    dialog = DatePickerDialog()
+    selected_date = dialog.show()
+    if selected_date:
+        widget.delete(0, tb.END)
+        widget.insert(0, selected_date)
 
 def login():
         admin = "king"
@@ -102,11 +117,11 @@ def load_client_table():
     main.pack(padx=(170,10), pady=(0,10), fill=BOTH, expand=TRUE)
     
     btn_1 = tb.Button(main,  text="Add Client", style=WARNING)
-    # btn_1.grid(row=0, column=0, padx=10, pady=(10,5) ,sticky="nsew")
     btn_1.place(x=10, y=10)
+    btn_1.bind("<Button-1>", lambda e:add_client(fields))
 
     table = Tableview(main, coldata=headers, rowdata=rows, bootstyle=PRIMARY,
-                    pagesize=10, height=10, searchable= True,
+                    pagesize=20, height=20, searchable= True,
                     paginated=True, autofit=True, stripecolor=(colors.light, None))
 
     table.autofit_columns()
@@ -296,6 +311,97 @@ def edit_form(data):
     trans_frame.grid(row=3, column=0, pady=(0, 10), sticky="nsew")
 
     return entries
+
+def add_client(fields):
+    global main
+    destroy_main()
+
+    main = tb.Frame(root, style='primary')
+    main.pack(padx=(170, 10), pady=(0, 10), fill='both', expand=True)
+
+    scrollable_frame = ScrolledFrame(main, autohide=True, style='primary')
+    scrollable_frame.place(x=0, y=0, relwidth=1, relheight=1)
+
+    in_sframe = tb.Frame(scrollable_frame, style='primary')
+    in_sframe.pack(fill='both', expand=True)
+
+    info_label = tb.Label(in_sframe, text='Personal Info', width=20, foreground='white',
+                          background='#4bb1ea', font=('Calibri', 15, 'bold'))
+    info_label.grid(row=0, column=0, padx=10, pady=(10, 0), sticky='nsew')
+
+    frame1 = tb.Frame(in_sframe, style='info')
+    frame1.grid(row=1, column=0, padx=10, pady=0, sticky='nsew')
+
+    entries = {}
+
+    def check_changes(*args):
+        for entry in entries.values():
+            if entry.get().strip():  # If any input is not empty
+                save.config(state='normal')
+                return
+        save.config(state='disabled')
+
+    def calculate_age(age_entry, birth_entry, event=None):
+        birthdate = birth_entry.entry.get() # Extract selected date
+        if birthdate:
+            from datetime import datetime
+            try:
+                birth_date = datetime.strptime(birthdate, "%m/%d/%Y")  # Ensure correct format
+                today = datetime.today()
+                age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+
+                age_entry.config(state="normal")
+                age_entry.delete(0, tb.END)
+                age_entry.insert(0, str(age))
+                age_entry.config(state="readonly")
+            except ValueError:
+                print(f"Invalid date format: {birthdate}")
+
+
+    for i, field in enumerate(fields):
+        label = tb.Label(frame1, text=field.replace('_', ' ').title() + ':', 
+                        font=('Arial', 12, 'bold'), foreground="white", background="#225384")
+        label.grid(row=i, column=0, sticky='w', padx=5, pady=2)
+
+        if field == 'id':
+            entry = tb.Label(frame1, font=('Arial', 12), width=31, background="orange")
+            # entry.grid(row=i, column=1, sticky='w', padx=5, pady=(10,2))
+        elif field in ['birthdate', 'deathdate']:
+            entry = DateEntry(frame1, bootstyle=PRIMARY)
+        elif field == 'age':
+            entry = tb.Entry(frame1, font=('Arial', 12), width=30, state='readonly')
+        else:
+            entry = tb.Entry(frame1, font=('Arial', 12), width=30)
+
+        entry.grid(row=i, column=1, sticky='w', padx=5, pady=2)
+        entries[field] = entry  # Store entry in dictionary
+        entry.bind('<KeyRelease>', check_changes)
+
+        # Bind after storing in entries to avoid KeyError
+    entries["birthdate"].bind("<FocusOut>", lambda event: calculate_age(entries["age"], entries["birthdate"]))
+
+
+        
+
+
+    def n_data():
+        """Extracts only entry values."""
+        return [entry.get() for entry in entries.values()]
+
+    btn_frame = tb.Frame(in_sframe, width=200, style='primary')
+    btn_frame.grid(row=2, column=0, padx=10, pady=5, sticky='nsew')
+
+    save = tb.Button(btn_frame, text='Save', bootstyle='info', state='disabled')
+    save.pack(side='left', padx=5)
+    save.bind("<Button-1>", lambda e: [save_to_db(n_data()), load_client_table()])
+
+    cancel = tb.Button(btn_frame, text='Cancel', bootstyle='info')
+    cancel.pack(side='left', padx=5)
+    cancel.bind("<Button-1>", lambda e:load_client_table())
+
+    return entries
+
+
 
 def load_sales():
     destroy_main()

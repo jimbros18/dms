@@ -49,3 +49,13 @@ def update_info(newdata):
     except sqlite3.Error as e:
         print("SQLite error:", e)
         return False
+    
+def save_to_db(n_data):
+        """Saves entry values to SQLite database."""
+        conn = sqlite3.connect("./DB/clientDB.sqlite3")
+        cursor = conn.cursor()
+        values = n_data
+        cursor.execute("INSERT INTO client VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", values)
+        conn.commit()
+        conn.close()
+        print("Data saved successfully!")
