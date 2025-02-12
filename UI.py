@@ -203,6 +203,7 @@ def client_form(data):
     trans_frame.grid(row=3, column=0, pady=(0,10), sticky="nsew")
 
 def edit_form(data):
+    print(data)
     global main
     destroy_main()
 
@@ -228,7 +229,15 @@ def edit_form(data):
 
     def check_changes(*args):
         for key, entry in entries.items():
-            if entry.get() != str(data[key]): 
+            if isinstance(entry, DateEntry) and entry.entry.get() != str(data[key]):
+                print(f"Change detected in {key}: {entry.entry.get()} != {data[key]}")
+                save.config(state="normal")
+                return
+            elif isinstance(entry, tb.Label) and entry.cget() != str(data[key]):
+                print(f"Change detected in {key}: {entry.cget()} != {data[key]}")
+                save.config(state="normal")
+                return
+            elif isinstance(entry, tb.Entry) and entry.get() != str(data[key]):
                 save.config(state="normal")
                 print(f"Change detected in {key}: {entry.get()} != {data[key]}")
                 return  
@@ -241,15 +250,35 @@ def edit_form(data):
 
         entry = tb.Entry(frame1, font=("Arial", 12), width=30)
         entry.insert(0, str(value))
+
+        if key in ['birthdate', 'deathdate']:
+            date_str = value
+            date = datetime.strptime(date_str, "%m/%d/%Y")
+            entry = DateEntry(frame1, bootstyle=PRIMARY)
+            entry.entry.delete(0, tb.END)
+            entry.entry.insert(0, date.strftime("%m/%d/%Y"))
+        elif key in 'age':
+            entry = tb.Label(frame1, text=value, font=('Arial', 12), width=31, foreground="white", background="#225384")
+        else:
+            entry = tb.Entry(frame1, font=('Arial', 12), width=30)
+            entry.insert(0,str(value))
+
         entry.grid(row=i, column=1, sticky='w', padx=5, pady=2)
-
-        entry.bind("<KeyRelease>", check_changes) 
-        entries[key] = entry
-
+        entries[key] = entry 
+        entry.bind("<KeyRelease>", check_changes)
     
     def n_data():
         """Extracts updated values and prints them."""
-        return {key: entry.get() for key, entry in entries.items()}
+        data = []
+        for key, entry in entries.items():
+            if isinstance(entry, DateEntry):  # Check if the entry is a DateEntry widget
+                value = entry.entry.get()  # Use the entry attribute to get the date
+            elif isinstance(entry, tb.Label):
+                value = entry.cget("text")
+            else:
+                value = entry.get()  # Use the standard get() method for other widgets
+            data.append(value)
+        return data
     
     def save_changes(event=None):
         """Executes saving only if the save button is enabled."""
@@ -359,8 +388,6 @@ def add_client(fields):
                         font=('Arial', 12, 'bold'), foreground="white", background="#225384")
         label.grid(row=i, column=0, sticky='w', padx=5, pady=2)
 
-        # if field == 'id':
-        #     entry = tb.Label(frame1, font=('Arial', 12), width=31, text=int("13"))
         if field in ['birthdate', 'deathdate']:
             entry = DateEntry(frame1, bootstyle=PRIMARY)
         elif field == 'age':
