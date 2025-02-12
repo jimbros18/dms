@@ -29,7 +29,7 @@ VALUES
     ('Robert', NULL, 'Brown', '1960-03-10', '2023-10-05', '789 Oak St, Capital City', 63, 'Bob', 'Buddhist', 'Mahogany Coffin', 2000.00, 700.00, 'Premium Plan', 500, 'Flowers, Photo Frame'),
     ('Mary', 'Anne', 'Johnson', '1955-11-30', '2023-09-30', '321 Pine St, Ogdenville', 67, 'Molly', 'Christian', 'Cherry Coffin', 1800.00, 600.00, 'Standard Plan', 350, 'Candles, Photo Frame'),
     ('James', 'William', 'Wilson', '1940-07-12', '2023-10-02', '654 Maple St, North Haverbrook', 83, 'Jim', 'Atheist', 'Walnut Coffin', 2200.00, 800.00, 'Premium Plan', 600, 'Flowers'),
-    ('Patricia', NULL, 'Taylor', '1952-09-18', '2023-10-03', '987 Cedar St, Brockway', 71, 'Pat', 'Hindu', 'Teak Coffin', 1700.00, 400.00, 'Basic Plan', 250, 'Candles'),
+    ('Patricia', NULL, 'Taylor', '1952-09-18', '2023-10-03', '987 Cedar St, Brockway', 71, 'Pat', 'Hindu', 'Teak Coffin', 1700.00, 400.00, 'Basic Plan', 250, 'Candles'),    
     ('Michael', 'Joseph', 'Anderson', '1948-04-25', '2023-09-28', '135 Birch St, Ogdenville', 75, 'Mike', 'Muslim', 'Oak Coffin', 1600.00, 500.00, 'Standard Plan', 400, 'Flowers, Candles'),
     ('Linda', 'Marie', 'Thomas', '1957-12-05', '2023-10-04', '246 Walnut St, Springfield', 65, 'Lin', 'Christian', 'Pine Coffin', 1400.00, 300.00, 'Basic Plan', 200, 'Candles'),
     ('William', NULL, 'Jackson', '1943-06-20', '2023-09-29', '369 Spruce St, Shelbyville', 80, 'Will', 'Jewish', 'Mahogany Coffin', 2100.00, 700.00, 'Premium Plan', 550, 'Flowers, Photo Frame'),

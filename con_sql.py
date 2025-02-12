@@ -51,11 +51,17 @@ def update_info(newdata):
         return False
     
 def save_to_db(n_data):
-        """Saves entry values to SQLite database."""
-        conn = sqlite3.connect("./DB/clientDB.sqlite3")
-        cursor = conn.cursor()
-        values = n_data
-        cursor.execute("INSERT INTO client VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", values)
-        conn.commit()
-        conn.close()
-        print("Data saved successfully!")
+    """Saves entry values to SQLite database."""
+    conn = sqlite3.connect("./DB/clientDB.sqlite3")
+    cursor = conn.cursor()
+
+    # Insert only the columns excluding 'id' (since it's auto-incremented)
+    cursor.execute("""
+        INSERT INTO client (first_name, middle_name, last_name, nickname, birthdate, deathdate, 
+                            address, age, religion, coffin, amount, gov_ass, mor_plan, 
+                            mor_plan_amount, accessories) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""", n_data)
+
+    conn.commit()
+    conn.close()
+    print("Data saved successfully!")

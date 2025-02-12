@@ -2,7 +2,6 @@ import ttkbootstrap as tb
 from ttkbootstrap.tableview import Tableview
 from ttkbootstrap.constants import *
 from ttkbootstrap.scrolled import ScrolledFrame
-from ttkbootstrap.dialogs import DatePickerDialog
 from ttkbootstrap.widgets import DateEntry
 from datetime import datetime
 
@@ -18,16 +17,9 @@ table = None
 row_id = None
 entry_widgets = []
 
-fields = ['id', 'First Name', 'Middle Name', 'Last Name', 'Nickname', 'birthdate', 'deathdate',
-          'Address', 'Age', 'Religion', 'Coffin', 'Amount', 'Gov. Assistance',
+fields = ['First Name', 'Middle Name', 'Last Name', 'Nickname', 'birthdate', 'deathdate',
+          'Address', 'age', 'Religion', 'Coffin', 'Amount', 'Gov. Assistance',
           'Mortuary Plan', 'Mortuary Plan Amount', 'Accessories']
-
-def select_date(widget):
-    dialog = DatePickerDialog()
-    selected_date = dialog.show()
-    if selected_date:
-        widget.delete(0, tb.END)
-        widget.insert(0, selected_date)
 
 def login():
         admin = "king"
@@ -336,72 +328,82 @@ def add_client(fields):
 
     def check_changes(*args):
         for entry in entries.values():
-            if entry.get().strip():  # If any input is not empty
+            if isinstance(entry, DateEntry): 
+                value = entry.entry.get().strip()
+            if isinstance(entry, tb.Label): 
+                value = entry.cget("text")
+            else:
+                value = entry.get().strip()
+            if value:  # If any input is not empty
                 save.config(state='normal')
                 return
-        save.config(state='disabled')
+        save.config(state='disabled')  # Disable button if all fields are empty
 
-    def calculate_age(age_entry, birth_entry, event=None):
-        birthdate = birth_entry.entry.get() # Extract selected date
-        if birthdate:
-            from datetime import datetime
+    def calculate_age(b_day, d_date, age_today ,event=None):
+        """Calculate age based on the selected bdate_str."""
+        bdate_str = b_day.entry.get().strip()
+        ddate_str = d_date.entry.get().strip()
+        if bdate_str:
             try:
-                birth_date = datetime.strptime(birthdate, "%m/%d/%Y")  # Ensure correct format
-                today = datetime.today()
-                age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
-
-                age_entry.config(state="normal")
-                age_entry.delete(0, tb.END)
-                age_entry.insert(0, str(age))
-                age_entry.config(state="readonly")
+                b_date = datetime.strptime(bdate_str, "%m/%d/%Y")
+                d_date = datetime.strptime(ddate_str, "%m/%d/%Y")
+                age = d_date.year - b_date.year - ((d_date.month, d_date.day) < (b_date.month, b_date.day))
+                age_today.config(text=str(age))
             except ValueError:
-                print(f"Invalid date format: {birthdate}")
-
+                print(f"Invalid date format: {bdate_str}")
+        else:
+            print("No bdate_str selected.")
 
     for i, field in enumerate(fields):
         label = tb.Label(frame1, text=field.replace('_', ' ').title() + ':', 
                         font=('Arial', 12, 'bold'), foreground="white", background="#225384")
         label.grid(row=i, column=0, sticky='w', padx=5, pady=2)
 
-        if field == 'id':
-            entry = tb.Label(frame1, font=('Arial', 12), width=31, background="orange")
-            # entry.grid(row=i, column=1, sticky='w', padx=5, pady=(10,2))
-        elif field in ['birthdate', 'deathdate']:
+        # if field == 'id':
+        #     entry = tb.Label(frame1, font=('Arial', 12), width=31, text=int("13"))
+        if field in ['birthdate', 'deathdate']:
             entry = DateEntry(frame1, bootstyle=PRIMARY)
         elif field == 'age':
-            entry = tb.Entry(frame1, font=('Arial', 12), width=30, state='readonly')
+            entry = tb.Label(frame1, font=('Arial', 12), width=31, foreground="white", background="#225384")
         else:
             entry = tb.Entry(frame1, font=('Arial', 12), width=30)
 
         entry.grid(row=i, column=1, sticky='w', padx=5, pady=2)
-        entries[field] = entry  # Store entry in dictionary
-        entry.bind('<KeyRelease>', check_changes)
+        entries[field] = entry 
+        entry.bind("<KeyRelease>", check_changes)
 
-        # Bind after storing in entries to avoid KeyError
-    entries["birthdate"].bind("<FocusOut>", lambda event: calculate_age(entries["age"], entries["birthdate"]))
-
-
-        
-
+    if "deathdate" in entries:
+        entries["deathdate"].bind("<FocusOut>", lambda event: calculate_age(entries["birthdate"], entries["deathdate"], entries["age"]))
+    else:
+        print("Warning: 'birthdate' or 'age' field not found in entries.")
 
     def n_data():
-        """Extracts only entry values."""
-        return [entry.get() for entry in entries.values()]
+        """Extracts values from all entries, handling DateEntry widgets."""
+        data = []
+        for fields, entry in entries.items():
+            if isinstance(entry, DateEntry):  # Check if the entry is a DateEntry widget
+                value = entry.entry.get()  # Use the entry attribute to get the date
+            elif isinstance(entry, tb.Label):
+                value = entry.cget("text")
+            else:
+                value = entry.get()  # Use the standard get() method for other widgets
+            data.append(value)
+        return data
 
     btn_frame = tb.Frame(in_sframe, width=200, style='primary')
     btn_frame.grid(row=2, column=0, padx=10, pady=5, sticky='nsew')
 
     save = tb.Button(btn_frame, text='Save', bootstyle='info', state='disabled')
     save.pack(side='left', padx=5)
-    save.bind("<Button-1>", lambda e: [save_to_db(n_data()), load_client_table()])
+    save.bind("<Button-1>", lambda e: [print(n_data()), save_to_db(n_data()), load_client_table()])
+    # save.bind("<Button-1>", lambda e: print(n_data()))
+
 
     cancel = tb.Button(btn_frame, text='Cancel', bootstyle='info')
     cancel.pack(side='left', padx=5)
     cancel.bind("<Button-1>", lambda e:load_client_table())
 
     return entries
-
-
 
 def load_sales():
     destroy_main()
