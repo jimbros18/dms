@@ -4,6 +4,7 @@ from ttkbootstrap.constants import *
 from ttkbootstrap.scrolled import ScrolledFrame
 from ttkbootstrap.widgets import DateEntry
 from datetime import datetime
+import functools
 
 from con_sql import *
 
@@ -203,7 +204,7 @@ def client_form(data):
     trans_frame.grid(row=3, column=0, pady=(0,10), sticky="nsew")
 
 def edit_form(data):
-    print(data)
+    print(data.keys())
     global main
     destroy_main()
 
@@ -227,22 +228,26 @@ def edit_form(data):
 
     entries = {}
 
-    def check_changes(*args):
-        for key, entry in entries.items():
-            if isinstance(entry, DateEntry) and entry.entry.get() != str(data[key]):
-                print(f"Change detected in {key}: {entry.entry.get()} != {data[key]}")
+    def check_changes(key, entries):
+        # new_value = entries[key].get()
+        if isinstance(entry, DateEntry): 
+            date_new_value = entry.entry.get().strip()
+            print(date_new_value)
+            if (key, date_new_value) in data.items():
+                print("data found")
+            else:
+                print(f"old {data[key]}, new: {entry.entry.get().strip()} ")
+        elif isinstance(entry, tb.Entry):
+            new_value = entries[key].get()
+            if (key, new_value) in data.items():
+                print("data found")
+            else:
+                print("not found")
                 save.config(state="normal")
-                return
-            elif isinstance(entry, tb.Label) and entry.cget() != str(data[key]):
-                print(f"Change detected in {key}: {entry.cget()} != {data[key]}")
-                save.config(state="normal")
-                return
-            elif isinstance(entry, tb.Entry) and entry.get() != str(data[key]):
-                save.config(state="normal")
-                print(f"Change detected in {key}: {entry.get()} != {data[key]}")
-                return  
-        save.config(state="disabled") 
-        print("No changes detected")
+        elif isinstance(entry, tb.Label):
+            print("label")
+
+        # save.config(state="disabled") 
 
     for i, (key, value) in enumerate(data.items()):
         label = tb.Label(frame1, text=key.replace('_', ' ').title() + ":", font=("Arial", 12, "bold"), style="Custom.TLabel")
@@ -257,6 +262,7 @@ def edit_form(data):
             entry = DateEntry(frame1, bootstyle=PRIMARY)
             entry.entry.delete(0, tb.END)
             entry.entry.insert(0, date.strftime("%m/%d/%Y"))
+            entry.entry.bind("<<DateEntrySelected>>", check_changes)
         elif key in 'age':
             entry = tb.Label(frame1, text=value, font=('Arial', 12), width=31, foreground="white", background="#225384")
         else:
@@ -265,8 +271,9 @@ def edit_form(data):
 
         entry.grid(row=i, column=1, sticky='w', padx=5, pady=2)
         entries[key] = entry 
-        entry.bind("<KeyRelease>", check_changes)
-    
+        # entry.bind("<FocusIn>", lambda e, k=key: get_old_val(k))  
+        entry.bind("<KeyRelease>", lambda event, k=key: check_changes(k, entries))
+
     def n_data():
         """Extracts updated values and prints them."""
         data = []
@@ -464,7 +471,7 @@ def destroy_main():
 
 navbar_items = {"Client": load_client_table, "Sales": load_sales, "Expenses":load_exp, "Inventory":load_inv,"Settings":load_settings, "Log-out": log_out}
 
-login()
+create_navbar()
 
 root.mainloop()
 
