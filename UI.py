@@ -18,7 +18,7 @@ table = None
 row_id = None
 entry_widgets = []
 
-fields = ['First Name', 'Middle Name', 'Last Name', 'Nickname', 'birthdate', 'deathdate',
+key_label = ['First Name', 'Middle Name', 'Last Name', 'Nickname', 'Birthdate', 'Deathdate',
           'Address', 'age', 'Religion', 'Coffin', 'Amount', 'Gov. Assistance',
           'Mortuary Plan', 'Mortuary Plan Amount', 'Accessories']
 
@@ -111,7 +111,7 @@ def load_client_table():
     
     btn_1 = tb.Button(main,  text="Add Client", style=WARNING)
     btn_1.place(x=10, y=10)
-    btn_1.bind("<Button-1>", lambda e:add_client(fields))
+    btn_1.bind("<Button-1>", lambda e:add_client(key_label))
 
     table = Tableview(main, coldata=headers, rowdata=rows, bootstyle=PRIMARY,
                     pagesize=20, height=20, searchable= True,
@@ -340,7 +340,7 @@ def edit_form(data):
 
     return entries
 
-def add_client(fields):
+def add_client(key_label):
     global main
     destroy_main()
 
@@ -362,20 +362,27 @@ def add_client(fields):
 
     entries = {}
 
-    def check_changes(*args):
-        for entry in entries.values():
-            if isinstance(entry, DateEntry): 
-                value = entry.entry.get().strip()
-            if isinstance(entry, tb.Label): 
-                value = entry.cget("text")
+    def check_nulls(key, entries):
+        data = {}
+        for key, entry in entries.items():
+            if key in ['Birthdate', 'Deathdate']:
+                data[key] = entry.entry.get()
+            elif key == 'age':
+                data[key] = entry.cget("text")
             else:
-                value = entry.get().strip()
-            if value:  # If any input is not empty
-                save.config(state='normal')
-                return
-        save.config(state='disabled')  # Disable button if all fields are empty
+                data[key] = entry.get()
 
-    def calculate_age(b_day, d_date, age_today ,event=None):
+        has_nulls = any(not value for value in data.values())
+        
+        if has_nulls:
+            print(f"Empty fields: {[k for k, v in data.items() if not v]}")
+            save.config(state="disabled")  
+        else:
+            print("All entries filled in")
+            save.config(state="normal") 
+
+
+    def calc_age(b_day, d_date, age_today ,event=None):
         """Calculate age based on the selected bdate_str."""
         bdate_str = b_day.entry.get().strip()
         ddate_str = d_date.entry.get().strip()
@@ -390,31 +397,30 @@ def add_client(fields):
         else:
             print("No bdate_str selected.")
 
-    for i, field in enumerate(fields):
-        label = tb.Label(frame1, text=field.replace('_', ' ').title() + ':', 
+    for i, key in enumerate(key_label):
+        label = tb.Label(frame1, text=key.replace('_', ' ').title() + ':', 
                         font=('Arial', 12, 'bold'), foreground="white", background="#225384")
         label.grid(row=i, column=0, sticky='w', padx=5, pady=2)
 
-        if field in ['birthdate', 'deathdate']:
+        if key in ['Birthdate', 'Deathdate']:
             entry = DateEntry(frame1, bootstyle=PRIMARY)
-        elif field == 'age':
+        elif key in 'age':
             entry = tb.Label(frame1, font=('Arial', 12), width=31, foreground="white", background="#225384")
         else:
             entry = tb.Entry(frame1, font=('Arial', 12), width=30)
 
         entry.grid(row=i, column=1, sticky='w', padx=5, pady=2)
-        entries[field] = entry 
-        entry.bind("<KeyRelease>", check_changes)
+        entries[key] = entry 
+        entry.bind("<KeyRelease>", lambda e,  k=key: check_nulls(key, entries))
 
-    if "deathdate" in entries:
-        entries["deathdate"].bind("<FocusOut>", lambda event: calculate_age(entries["birthdate"], entries["deathdate"], entries["age"]))
-    else:
-        print("Warning: 'birthdate' or 'age' field not found in entries.")
+    if key in ['Birthdate', 'Deathdate']:
+        entries[key].bind("<FocusOut>", lambda e, key: calc_age(key, entries))
+        entries[key].bind("<FocusOut>", lambda e, key: print(key, entries))
 
     def n_data():
         """Extracts values from all entries, handling DateEntry widgets."""
         data = []
-        for fields, entry in entries.items():
+        for key_label, entry in entries.items():
             if isinstance(entry, DateEntry):  # Check if the entry is a DateEntry widget
                 value = entry.entry.get()  # Use the entry attribute to get the date
             elif isinstance(entry, tb.Label):
@@ -424,12 +430,22 @@ def add_client(fields):
             data.append(value)
         return data
 
+    def add_new_client():
+        if save.instate(["!disabled"]):  # Check if save is enabled
+            new_values = n_data()  # Extract new values
+            print("Saving data:", new_values)  # Debugging print statement
+            save_to_db(new_values)  # Save the updated info
+            client_form(new_values)  # Load updated data into form
+        else:
+            print("Save button is disabled")
+
+
     btn_frame = tb.Frame(in_sframe, width=200, style='primary')
     btn_frame.grid(row=2, column=0, padx=10, pady=5, sticky='nsew')
 
     save = tb.Button(btn_frame, text='Save', bootstyle='info', state='disabled')
     save.pack(side='left', padx=5)
-    save.bind("<Button-1>", lambda e: [print(n_data()), save_to_db(n_data()), load_client_table()])
+    save.bind("<Button-1>", lambda e: add_new_client())
     # save.bind("<Button-1>", lambda e: print(n_data()))
 
 
