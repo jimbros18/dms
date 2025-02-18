@@ -6,6 +6,14 @@ def get_db():
     df = pd.read_sql_query("SELECT * FROM client;", connection)
     return df
 
+def get_keys():
+    connection = sqlite3.connect("./DB/clientDB.sqlite3")
+    try:
+        df = pd.read_sql_query("SELECT * FROM client LIMIT 1;", connection)
+        return df.keys() 
+    finally:
+        connection.close()
+
 def get_client_id(row_id):
     connection = sqlite3.connect("./DB/clientDB.sqlite3")
     query = "SELECT * FROM client WHERE id = ?;"
