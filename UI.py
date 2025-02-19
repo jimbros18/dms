@@ -4,7 +4,7 @@ from ttkbootstrap.constants import *
 from ttkbootstrap.scrolled import ScrolledFrame
 from ttkbootstrap.widgets import DateEntry
 from datetime import datetime
-import functools
+# from tkinter import StringVar
 
 from con_sql import *
 
@@ -17,10 +17,24 @@ main = None
 table = None
 row_id = None
 entry_widgets = []
+string_vars = {}
+entries = {}
 
-key_label = ['First Name', 'Middle Name', 'Last Name', 'Nickname', 'Birthdate', 'Deathdate',
+key_labels = ['First Name', 'Middle Name', 'Last Name', 'Nickname', 'birthdate', 'deathdate',
           'Address', 'age', 'Religion', 'Coffin', 'Amount', 'Gov. Assistance',
           'Mortuary Plan', 'Mortuary Plan Amount', 'Accessories']
+
+def calc_age(key, entries, event=None):
+    if key in ['birthdate', 'deathdate']:
+        birthdate_str = entries['birthdate'].entry.get()
+        deathdate_str = entries['deathdate'].entry.get()
+        birthdate = datetime.strptime(birthdate_str, "%m/%d/%Y")
+        deathdate = datetime.strptime(deathdate_str, "%m/%d/%Y")
+        age = deathdate.year - birthdate.year
+        if (deathdate.month, deathdate.day) < (birthdate.month, birthdate.day):
+            age -= 1
+        print(f"Age: {age} years old")
+        entries['age'].config(text=age)
 
 def login():
         admin = "king"
@@ -109,9 +123,9 @@ def load_client_table():
     main = tb.Frame(root, style=PRIMARY )
     main.pack(padx=(170,10), pady=(0,10), fill=BOTH, expand=TRUE)
     
-    btn_1 = tb.Button(main,  text="Add Client", style=WARNING)
-    btn_1.place(x=10, y=10)
-    btn_1.bind("<Button-1>", lambda e:add_client(key_label))
+    add_btn = tb.Button(main,  text="Add Client", style=WARNING)
+    add_btn.place(x=10, y=10)
+    add_btn.bind("<Button-1>", lambda e:add_client(get_keys))
 
     table = Tableview(main, coldata=headers, rowdata=rows, bootstyle=PRIMARY,
                     pagesize=20, height=20, searchable= True,
@@ -226,13 +240,11 @@ def edit_form(data):
     frame1 = tb.Frame(in_sframe, style=INFO)
     frame1.grid(row=1, column=0, padx=10, pady=0, sticky="nsew")
 
-    entries = {}
-
     def check_changes(key, entries):
-        # new_value = entries[key].get()
         if isinstance(entry, DateEntry): 
             date_new_value = entry.entry.get().strip()
             print(date_new_value)
+            calc_age(key, entries)
             if (key, date_new_value) in data.items():
                 print("data found")
             else:
@@ -241,28 +253,37 @@ def edit_form(data):
             new_value = entries[key].get()
             if (key, new_value) in data.items():
                 print("data found")
+                save.config(state="disabled")
             else:
                 print("not found")
                 save.config(state="normal")
         elif isinstance(entry, tb.Label):
             print("label")
-
-        # save.config(state="disabled") 
+        # if key in ['birthdate', 'deathdate']:
+        #     new_value = entries[key].entry.get()
+        #     print(new_value)
+        #     calc_age(key, entries)
+        # elif key in 'age':
+        #     new_value = entries[key].cget("text")
+        #     print(f'edad: {new_value}')
+        # else:
+        #     new_value = entries[key].get()
+        #     print(new_value)
 
     for i, (key, value) in enumerate(data.items()):
         label = tb.Label(frame1, text=key.replace('_', ' ').title() + ":", font=("Arial", 12, "bold"), style="Custom.TLabel")
         label.grid(row=i, column=0, sticky='w', padx=5, pady=2)
 
-        entry = tb.Entry(frame1, font=("Arial", 12), width=30)
-        entry.insert(0, str(value))
-
-        if key in ['birthdate', 'deathdate']:
-            date_str = value
-            date = datetime.strptime(date_str, "%m/%d/%Y")
-            entry = DateEntry(frame1, bootstyle=PRIMARY)
-            entry.entry.delete(0, tb.END)
-            entry.entry.insert(0, date.strftime("%m/%d/%Y"))
-            entry.entry.bind("<<DateEntrySelected>>", check_changes)
+        if key == 'id':
+            entry = tb.Label(frame1, text=value, font=('Arial', 12, 'bold'), width=31, foreground="orange", background="#225384")
+        elif key in ['birthdate', 'deathdate']:
+            try:
+                date = datetime.strptime(value, "%m/%d/%Y")
+                entry = DateEntry(frame1, bootstyle=PRIMARY)
+                entry.entry.delete(0, tb.END)
+                entry.entry.insert(0, date.strftime("%m/%d/%Y"))
+            except ValueError as e:
+                print(f"Invalid date format for {key}: {value}")  # Debugging line
         elif key in 'age':
             entry = tb.Label(frame1, text=value, font=('Arial', 12), width=31, foreground="white", background="#225384")
         else:
@@ -271,11 +292,13 @@ def edit_form(data):
 
         entry.grid(row=i, column=1, sticky='w', padx=5, pady=2)
         entries[key] = entry 
-        # entry.bind("<FocusIn>", lambda e, k=key: get_old_val(k))  
+        entry.bind("<FocusIn>", lambda event, k=key: check_changes(k, entries))
         entry.bind("<KeyRelease>", lambda event, k=key: check_changes(k, entries))
+        if key in ['birthdate','deathdate']:
+            entries[key].bind("<FocusOut>", lambda event, k=key: check_changes(k, entries))
+        
 
     def n_data():
-        """Extracts updated values and prints them."""
         data = []
         for key, entry in entries.items():
             if isinstance(entry, DateEntry):  # Check if the entry is a DateEntry widget
@@ -288,12 +311,11 @@ def edit_form(data):
         return data
     
     def save_changes(event=None):
-        """Executes saving only if the save button is enabled."""
-        if save.instate(["!disabled"]):  # Check if save is enabled
-            new_values = n_data()  # Extract new values
-            print("Saving data:", new_values)  # Debugging print statement
-            update_info(new_values)  # Save the updated info
-            client_form(new_values)  # Load updated data into form
+        if save.instate(["!disabled"]): 
+            new_values = n_data() 
+            print("Saving data:", new_values)
+            update_info(new_values)
+            client_form(new_values)
         else:
             print("Save button is disabled")
 
@@ -340,7 +362,7 @@ def edit_form(data):
 
     return entries
 
-def add_client(key_label):
+def add_client(get_keys):
     global main
     destroy_main()
 
@@ -365,8 +387,9 @@ def add_client(key_label):
     def check_nulls(key, entries):
         data = {}
         for key, entry in entries.items():
-            if key in ['Birthdate', 'Deathdate']:
+            if key in ['birthdate', 'deathdate']:
                 data[key] = entry.entry.get()
+                calc_age(key, entries)
             elif key == 'age':
                 data[key] = entry.cget("text")
             else:
@@ -379,56 +402,46 @@ def add_client(key_label):
             save.config(state="disabled")  
         else:
             print("All entries filled in")
-            save.config(state="normal") 
+            save.config(state="normal")
 
-
-    def calc_age(b_day, d_date, age_today ,event=None):
-        """Calculate age based on the selected bdate_str."""
-        bdate_str = b_day.entry.get().strip()
-        ddate_str = d_date.entry.get().strip()
-        if bdate_str:
-            try:
-                b_date = datetime.strptime(bdate_str, "%m/%d/%Y")
-                d_date = datetime.strptime(ddate_str, "%m/%d/%Y")
-                age = d_date.year - b_date.year - ((d_date.month, d_date.day) < (b_date.month, b_date.day))
-                age_today.config(text=str(age))
-            except ValueError:
-                print(f"Invalid date format: {bdate_str}")
-        else:
-            print("No bdate_str selected.")
-
-    for i, key in enumerate(key_label):
+    for i, key in enumerate(key_labels):
         label = tb.Label(frame1, text=key.replace('_', ' ').title() + ':', 
                         font=('Arial', 12, 'bold'), foreground="white", background="#225384")
         label.grid(row=i, column=0, sticky='w', padx=5, pady=2)
 
-        if key in ['Birthdate', 'Deathdate']:
+        if key in ['birthdate', 'deathdate']:
             entry = DateEntry(frame1, bootstyle=PRIMARY)
-        elif key in 'age':
+        elif key == 'age':
             entry = tb.Label(frame1, font=('Arial', 12), width=31, foreground="white", background="#225384")
         else:
             entry = tb.Entry(frame1, font=('Arial', 12), width=30)
 
         entry.grid(row=i, column=1, sticky='w', padx=5, pady=2)
-        entries[key] = entry 
+        entries[key] = entry         
         entry.bind("<KeyRelease>", lambda e,  k=key: check_nulls(key, entries))
-
-    if key in ['Birthdate', 'Deathdate']:
-        entries[key].bind("<FocusOut>", lambda e, key: calc_age(key, entries))
-        entries[key].bind("<FocusOut>", lambda e, key: print(key, entries))
+        if key in ['birthdate','deathdate']:
+            entries[key].bind("<FocusOut>", lambda event, k=key: check_nulls(k, entries))
 
     def n_data():
-        """Extracts values from all entries, handling DateEntry widgets."""
-        data = []
-        for key_label, entry in entries.items():
-            if isinstance(entry, DateEntry):  # Check if the entry is a DateEntry widget
-                value = entry.entry.get()  # Use the entry attribute to get the date
-            elif isinstance(entry, tb.Label):
-                value = entry.cget("text")
+        data = {}
+        for key, entry in entries.items():
+            if  key in ['birthdate', 'deathdate']:  # Check if the entry is a DateEntry widget
+                data[key] = entry.entry.get()  # Use the entry attribute to get the date
+            elif key == 'age':
+                 data[key] = entry.cget("text")
             else:
-                value = entry.get()  # Use the standard get() method for other widgets
-            data.append(value)
+                 data[key] = entry.get()  
         return data
+    
+    def add_new_client():
+        if save.instate(["!disabled"]):
+            new_values = n_data() 
+            values = list(new_values.values())
+            print("Saving data:", values) 
+            save_to_db(values)  
+            client_form(n_data()) 
+        else:
+            print("Save button is disabled")
 
     def add_new_client():
         if save.instate(["!disabled"]):  # Check if save is enabled
@@ -446,7 +459,6 @@ def add_client(key_label):
     save = tb.Button(btn_frame, text='Save', bootstyle='info', state='disabled')
     save.pack(side='left', padx=5)
     save.bind("<Button-1>", lambda e: add_new_client())
-    # save.bind("<Button-1>", lambda e: print(n_data()))
 
 
     cancel = tb.Button(btn_frame, text='Cancel', bootstyle='info')
