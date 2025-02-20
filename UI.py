@@ -4,7 +4,6 @@ from ttkbootstrap.constants import *
 from ttkbootstrap.scrolled import ScrolledFrame
 from ttkbootstrap.widgets import DateEntry
 from datetime import datetime
-# from tkinter import StringVar
 
 from con_sql import *
 
@@ -125,7 +124,7 @@ def load_client_table():
     
     add_btn = tb.Button(main,  text="Add Client", style=WARNING)
     add_btn.place(x=10, y=10)
-    add_btn.bind("<Button-1>", lambda e:add_client(get_keys))
+    add_btn.bind("<Button-1>", lambda e:add_client())
 
     table = Tableview(main, coldata=headers, rowdata=rows, bootstyle=PRIMARY,
                     pagesize=20, height=20, searchable= True,
@@ -152,9 +151,10 @@ def get_row():
     row_id = row[0].values[0]
     row_data = row[0].values
     # print(f'id: {row_id}, row: {row_data}')
-    client_form(data = get_client_id(row_id))
+    client_form(row_id)
 
-def client_form(data):
+def client_form(row_id):
+    data = get_client_id(row_id)
     global main
     destroy_main()
     main = tb.Frame(root, style=PRIMARY)
@@ -172,8 +172,12 @@ def client_form(data):
     for i, (key, value) in enumerate(data.items()):
         label = tb.Label(frame1, text=key.replace('_', ' ').title() + ":", font=("Arial", 12, "bold"), style="Custom.TLabel")
         label.grid(row=i, column=0, sticky='w', padx=5, pady=2)
-    
-        value_label = tb.Label(frame1, text=str(value), font=("Arial", 12),style="Custom.TLabel")
+
+        if key == 'id':
+            value_label = tb.Label(frame1, text=str(value), font=("Arial", 12, 'bold'), foreground="orange", background="#225384")
+        else:
+            value_label = tb.Label(frame1, text=str(value), font=("Arial", 12),style="Custom.TLabel")
+        
         value_label.grid(row=i, column=1, sticky='w', padx=5, pady=2)
 
     btn_frame = tb.Frame(main, width=200, style=PRIMARY)
@@ -240,35 +244,37 @@ def edit_form(data):
     frame1 = tb.Frame(in_sframe, style=INFO)
     frame1.grid(row=1, column=0, padx=10, pady=0, sticky="nsew")
 
+
     def check_changes(key, entries):
-        if isinstance(entry, DateEntry): 
-            date_new_value = entry.entry.get().strip()
-            print(date_new_value)
+        # print(data)
+        # if isinstance(entry, DateEntry): 
+        if key in ['birthdate', 'deathdate']: 
+            # new_value = entries[key].entry.get().strip()
+            # print(new_value)
             calc_age(key, entries)
-            if (key, date_new_value) in data.items():
-                print("data found")
-            else:
-                print(f"old {data[key]}, new: {entry.entry.get().strip()} ")
-        elif isinstance(entry, tb.Entry):
+            compare_data(key)
+            # if (key, new_value) in data.items():
+            #     print("data found")
+            # else:
+            #     print(f"old {data[key]}, new: {entries[key].entry.get().strip()} ")
+        elif key == 'age':
+            new_value = entries[key].cget("text")
+            compare_data(key)
+            # if (key, new_value) in data.items():
+            #     print("data found")
+            #     save.config(state="disabled")
+            # else:
+            #     print("not found")
+            #     save.config(state="normal")
+        else:
             new_value = entries[key].get()
-            if (key, new_value) in data.items():
-                print("data found")
-                save.config(state="disabled")
-            else:
-                print("not found")
-                save.config(state="normal")
-        elif isinstance(entry, tb.Label):
-            print("label")
-        # if key in ['birthdate', 'deathdate']:
-        #     new_value = entries[key].entry.get()
-        #     print(new_value)
-        #     calc_age(key, entries)
-        # elif key in 'age':
-        #     new_value = entries[key].cget("text")
-        #     print(f'edad: {new_value}')
-        # else:
-        #     new_value = entries[key].get()
-        #     print(new_value)
+            compare_data(key)
+            # if (key, new_value) in data.items():
+            #     print("data found")
+            #     save.config(state="disabled")
+            # else:
+            #     print("not found")
+            #     save.config(state="normal")
 
     for i, (key, value) in enumerate(data.items()):
         label = tb.Label(frame1, text=key.replace('_', ' ').title() + ":", font=("Arial", 12, "bold"), style="Custom.TLabel")
@@ -298,24 +304,36 @@ def edit_form(data):
             entries[key].bind("<FocusOut>", lambda event, k=key: check_changes(k, entries))
         
 
-    def n_data():
-        data = []
+    def get_entry_vals():
+        new_data = {}
         for key, entry in entries.items():
-            if isinstance(entry, DateEntry):  # Check if the entry is a DateEntry widget
-                value = entry.entry.get()  # Use the entry attribute to get the date
-            elif isinstance(entry, tb.Label):
-                value = entry.cget("text")
-            else:
-                value = entry.get()  # Use the standard get() method for other widgets
-            data.append(value)
-        return data
+            if  key in ['birthdate', 'deathdate']:
+                new_data[key] = entry.entry.get() 
+            elif key in ['id', 'age']:
+                 new_data[key] = entry.cget("text")
+            elif isinstance(entry, tb.Entry):
+                 new_data[key] = entry.get()  
+        return new_data
+    
+    def compare_data(key):
+        id = data['id']
+        old_data = get_client_id(id)
+        new_data = get_entry_vals()
+        diff = {
+            key: {"old": old_data[key], "new": new_data[key]}
+            for key in old_data if old_data[key] != new_data[key]
+        }
+        print(diff)
+        # return diff
     
     def save_changes(event=None):
         if save.instate(["!disabled"]): 
-            new_values = n_data() 
-            print("Saving data:", new_values)
+            new_values = get_entry_vals()
+            values = list(new_values.values())
+            print("Updating data:", new_values)
             update_info(new_values)
-            client_form(new_values)
+            id = data['id']
+            client_form(id)
         else:
             print("Save button is disabled")
 
@@ -328,7 +346,8 @@ def edit_form(data):
 
     cancel = tb.Button(btn_frame, text="Cancel", bootstyle=INFO)
     cancel.pack(side=LEFT, padx=5)
-    cancel.bind("<Button-1>", lambda e: client_form(data))
+    id = data['id']
+    cancel.bind("<Button-1>", lambda e: client_form(id))
 
     v_bar1 = tb.Frame(in_sframe, style=PRIMARY)
     v_bar1.grid(row=0, column=1, rowspan=3, sticky="nsew")
@@ -362,7 +381,7 @@ def edit_form(data):
 
     return entries
 
-def add_client(get_keys):
+def add_client():
     global main
     destroy_main()
 
@@ -422,7 +441,7 @@ def add_client(get_keys):
         if key in ['birthdate','deathdate']:
             entries[key].bind("<FocusOut>", lambda event, k=key: check_nulls(k, entries))
 
-    def n_data():
+    def get_entry_vals():
         data = {}
         for key, entry in entries.items():
             if  key in ['birthdate', 'deathdate']:  # Check if the entry is a DateEntry widget
@@ -435,23 +454,14 @@ def add_client(get_keys):
     
     def add_new_client():
         if save.instate(["!disabled"]):
-            new_values = n_data() 
+            new_values = get_entry_vals() 
             values = list(new_values.values())
             print("Saving data:", values) 
             save_to_db(values)  
-            client_form(n_data()) 
+            id = get_last_id()
+            client_form(id)
         else:
             print("Save button is disabled")
-
-    def add_new_client():
-        if save.instate(["!disabled"]):  # Check if save is enabled
-            new_values = n_data()  # Extract new values
-            print("Saving data:", new_values)  # Debugging print statement
-            save_to_db(new_values)  # Save the updated info
-            client_form(new_values)  # Load updated data into form
-        else:
-            print("Save button is disabled")
-
 
     btn_frame = tb.Frame(in_sframe, width=200, style='primary')
     btn_frame.grid(row=2, column=0, padx=10, pady=5, sticky='nsew')

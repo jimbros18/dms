@@ -20,6 +20,14 @@ def get_client_id(row_id):
     df = pd.read_sql_query(query, connection, params=(row_id,))
     return df.iloc[0].to_dict()
 
+def get_last_id():
+    connection = sqlite3.connect("./DB/clientDB.sqlite3")
+    cursor = connection.cursor()
+    query = "SELECT MAX(id) FROM client;"
+    cursor.execute(query)
+    last_id = cursor.fetchone()[0]
+    return last_id
+
 def update_info(newdata):
     if 'id' not in newdata:
         print("Error: 'id' key is required to update the record.")
