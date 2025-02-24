@@ -4,6 +4,7 @@ from ttkbootstrap.constants import *
 from ttkbootstrap.scrolled import ScrolledFrame
 from ttkbootstrap.widgets import DateEntry
 from datetime import datetime
+import re as regex
 
 from con_sql import *
 
@@ -24,16 +25,28 @@ key_labels = ['First Name', 'Middle Name', 'Last Name', 'Nickname', 'birthdate',
           'Mortuary Plan', 'Mortuary Plan Amount', 'Accessories']
 
 def calc_age(key, entries, event=None):
+    style = tb.Style()
+    style.configure("!char.TEntry", foreground="red", font=("Tahoma", 12 ,"bold"))
     if key in ['birthdate', 'deathdate']:
         birthdate_str = entries['birthdate'].entry.get()
         deathdate_str = entries['deathdate'].entry.get()
-        birthdate = datetime.strptime(birthdate_str, "%m/%d/%Y")
-        deathdate = datetime.strptime(deathdate_str, "%m/%d/%Y")
-        age = deathdate.year - birthdate.year
-        if (deathdate.month, deathdate.day) < (birthdate.month, birthdate.day):
-            age -= 1
-        print(f"Age: {age} years old")
-        entries['age'].config(text=age)
+        pattern = r"^[0-9/]+$"
+        if not regex.fullmatch(pattern, birthdate_str) or not regex.fullmatch(pattern, deathdate_str):
+            print("Error: Dates must contain only numbers and slashes (e.g., MM/DD/YYYY)")
+            entries['age'].config(text="Invalid date format", foreground = "#FF2400", font=("Tahome", 12, "bold"))
+            return  
+        else:
+            birthdate = datetime.strptime(birthdate_str, "%m/%d/%Y")
+            deathdate = datetime.strptime(deathdate_str, "%m/%d/%Y")
+            age = deathdate.year - birthdate.year
+            if (deathdate.month, deathdate.day) < (birthdate.month, birthdate.day):
+                age -= 1
+            print(f"Age: {age} years old")
+            entries['age'].config(text=age, foreground = "white", font = ("Tahoma", 12))
+        # except ValueError as e:
+        #     # Handle invalid date format or out-of-range dates
+        #     # print(f"Error: {e}")
+        #     entries['age'].config(text="Invalid date", style="!char.TEntry")
 
 def login():
         admin = "king"
@@ -222,7 +235,7 @@ def client_form(row_id):
     trans_frame.grid(row=3, column=0, pady=(0,10), sticky="nsew")
 
 def edit_form(data):
-    print(data.keys())
+    # print(data.keys())
     global main
     destroy_main()
 
@@ -246,35 +259,28 @@ def edit_form(data):
 
 
     def check_changes(key, entries):
-        # print(data)
-        # if isinstance(entry, DateEntry): 
+        style = tb.Style()
+        style.configure("!char.TEntry", foreground="red")
+        style.configure("changed.TEntry", foreground="blue")
+        style.configure("unchanged.TEntry", foreground="black")
+            
         if key in ['birthdate', 'deathdate']: 
-            # new_value = entries[key].entry.get().strip()
-            # print(new_value)
+            text = entries[key].entry.get().strip()
+            print(compare_data(key))
             calc_age(key, entries)
-            compare_data(key)
-            # if (key, new_value) in data.items():
-            #     print("data found")
-            # else:
-            #     print(f"old {data[key]}, new: {entries[key].entry.get().strip()} ")
         elif key == 'age':
-            new_value = entries[key].cget("text")
-            compare_data(key)
-            # if (key, new_value) in data.items():
-            #     print("data found")
-            #     save.config(state="disabled")
-            # else:
-            #     print("not found")
-            #     save.config(state="normal")
+            text = entries[key].cget("text")
+            print(compare_data(key))
         else:
-            new_value = entries[key].get()
-            compare_data(key)
-            # if (key, new_value) in data.items():
-            #     print("data found")
-            #     save.config(state="disabled")
-            # else:
-            #     print("not found")
-            #     save.config(state="normal")
+            text = entries[key].get()
+            print(compare_data(key))
+            if compare_data(key) :
+                if check_str(text) == FALSE:
+                    entries[key].config(style = "!char.TEntry")
+                else:
+                     entries[key].config(style = "changed.TEntry")
+            else:
+                entries[key].config(style = "unchanged.TEntry")
 
     for i, (key, value) in enumerate(data.items()):
         label = tb.Label(frame1, text=key.replace('_', ' ').title() + ":", font=("Arial", 12, "bold"), style="Custom.TLabel")
@@ -288,8 +294,9 @@ def edit_form(data):
                 entry = DateEntry(frame1, bootstyle=PRIMARY)
                 entry.entry.delete(0, tb.END)
                 entry.entry.insert(0, date.strftime("%m/%d/%Y"))
+                entry.entry.config(font=("Tahoma", 11))
             except ValueError as e:
-                print(f"Invalid date format for {key}: {value}")  # Debugging line
+                print(f"Invalid date format for {key}: {value}") 
         elif key in 'age':
             entry = tb.Label(frame1, text=value, font=('Arial', 12), width=31, foreground="white", background="#225384")
         else:
@@ -315,17 +322,19 @@ def edit_form(data):
                  new_data[key] = entry.get()  
         return new_data
     
+    def check_str(text)->bool:
+        pattern = r"^[a-zA-Z0-9\-. ]+$"
+        return bool(regex.fullmatch(pattern,text))
+    
     def compare_data(key):
         id = data['id']
         old_data = get_client_id(id)
         new_data = get_entry_vals()
-        diff = {
-            key: {"old": old_data[key], "new": new_data[key]}
-            for key in old_data if old_data[key] != new_data[key]
-        }
-        print(diff)
-        # return diff
-    
+        if old_data[key] != new_data[key]:
+            return f"{key}: False"
+        else:
+            return f"{key}: True"
+            
     def save_changes(event=None):
         if save.instate(["!disabled"]): 
             new_values = get_entry_vals()
