@@ -140,7 +140,7 @@ def load_client_table():
     add_btn.bind("<Button-1>", lambda e:add_client())
 
     table = Tableview(main, coldata=headers, rowdata=rows, bootstyle=PRIMARY,
-                    pagesize=20, height=20, searchable= True,
+                    pagesize=25, height=25, searchable= True,
                     paginated=True, autofit=True, stripecolor=(colors.light, None))
 
     table.autofit_columns()
@@ -235,7 +235,7 @@ def client_form(row_id):
     trans_frame.grid(row=3, column=0, pady=(0,10), sticky="nsew")
 
 def edit_form(data):
-    # print(data.keys())
+    print(data.keys())
     global main
     destroy_main()
 
@@ -307,6 +307,13 @@ def edit_form(data):
                 print(f"Invalid date format for {key}: {value}") 
         elif key in 'age':
             entry = tb.Label(frame1, text=value, font=('Arial', 12), width=31, foreground="white", background="#225384")
+        elif key == 'coffin':
+            options = ['Ordinary', 'Quadrado Flat', 'Ugoy Stoko', 'Ugoy Plain', 'Urgoy', 'Jr. Metal Half Glass']
+            def_val = tb.StringVar()
+            style = tb.Style()
+            style.configure('TMenubutton', font=('Tahoma', 12), width=26, foreground="black", background="white")
+            entry = tb.OptionMenu(frame1, def_val, *options, style='TMenubutton')
+            def_val.set(value)
         else:
             entry = tb.Entry(frame1, font=('Arial', 12), width=30)
             entry.insert(0,str(value))
@@ -316,8 +323,7 @@ def edit_form(data):
         entry.bind("<FocusIn>", lambda event, k=key: check_changes(k, entries))
         entry.bind("<KeyRelease>", lambda event, k=key: check_changes(k, entries))
         if key in ['birthdate','deathdate']:
-            entries[key].bind("<FocusOut>", lambda event, k=key: check_changes(k, entries))
-        
+            entries[key].bind("<FocusOut>", lambda event, k=key: check_changes(k, entries))       
 
     def get_entry_vals():
         new_data = {}
