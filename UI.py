@@ -4,7 +4,7 @@ from ttkbootstrap.constants import *
 from ttkbootstrap.scrolled import ScrolledFrame
 from ttkbootstrap.widgets import DateEntry
 from datetime import datetime
-import re as regex
+import re
 
 from con_sql import *
 
@@ -31,7 +31,7 @@ def calc_age(key, entries, event=None):
         birthdate_str = entries['birthdate'].entry.get()
         deathdate_str = entries['deathdate'].entry.get()
         pattern = r"^[0-9/]+$"
-        if not regex.fullmatch(pattern, birthdate_str) or not regex.fullmatch(pattern, deathdate_str):
+        if not re.fullmatch(pattern, birthdate_str) or not re.fullmatch(pattern, deathdate_str):
             print("Error: Dates must contain only numbers and slashes (e.g., MM/DD/YYYY)")
             entries['age'].config(text="Invalid date format", foreground = "#FF2400", font=("Tahome", 12, "bold"))
             return  
@@ -260,17 +260,14 @@ def edit_form(data):
 
     def check_changes(key, entries):
         style = tb.Style()
-        style.configure("invalid.TEntry", foreground="red")
-        style.configure("changed.TEntry", foreground="green")
+        style.configure("invalid.TEntry", foreground="red", font=("Tahoma", 12, "bold"))
+        style.configure("changed.TEntry", foreground="green", font=("Tahoma", 12, "bold"))
         style.configure("unchanged.TEntry", foreground="black")
             
         if key in ['birthdate', 'deathdate']: 
-            date = entries[key].entry.get().strip()
-            pattern = r"^[0-9/]+$"
-            x = bool(regex.fullmatch(pattern, date))
-            print(f'{date}: {x}')
-            if x == TRUE:
-                if compare_data(key) == TRUE:
+            str_val = entries[key].entry.get().strip()
+            if check_vals(key, str_val) == True:
+                if compare_data(key) == True:
                     calc_age(key, entries)
                     entries[key].configure(style = "unchanged.TEntry")
                 else:
@@ -278,12 +275,12 @@ def edit_form(data):
             else:
                 entries[key].configure(style="invalid.TEntry")
         elif key == 'age':
-            text = entries[key].cget("text")
+            str_val = entries[key].cget("text")
             print(compare_data(key))
         else:
-            text = entries[key].get()
-            if check_str(text) == TRUE:
-                if compare_data(key) == TRUE:
+            str_val = entries[key].get()
+            if check_vals(key, str_val) == True:
+                if compare_data(key) == True:
                     entries[key].config(style = "unchanged.TEntry")
                 else:
                     entries[key].config(style = "changed.TEntry")
@@ -335,22 +332,28 @@ def edit_form(data):
             elif isinstance(entry, tb.Entry):
                  new_data[key] = entry.get()  
         return new_data
+
     
-    def check_str(text)->bool:
-        pattern = r"^[a-zA-Z0-9\-. ]+$"
-        print(f'{text}: {bool(regex.fullmatch(pattern,text))}')
-        return bool(regex.fullmatch(pattern,text))
-    
+    def check_vals(key, str_val):
+        types = {
+            r"^[a-zA-Z-. ]+$": ["first_name", "middle_name", "last_name", "nickname", "address", "religion", "coffin", "accessories"],
+            r"^(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])/(19|20)\d{2}$": ["birthdate", "deathdate"],
+            r"^[0-9]+$": ["age", "amount", "gov_ass", "mor_plan_amount"]
+        }
+        pattern = next((k for k, v in types.items() if key in v), None)
+        if pattern is None: return False
+        result = bool(re.fullmatch(pattern,str(str_val))) # returns True or False
+        print(f'{str_val}: {result}')
+        return result
+
     def compare_data(key):
         id = data['id']
         old_data = get_client_id(id)
         new_data = get_entry_vals()
         if old_data[key] == new_data[key]:
-            # print(f'{new_data[key]}: TRUE')
-            return TRUE
+            return True
         else:
-            # print(f'{new_data[key]}: FALSE')
-            return FALSE
+            return False
             
     def save_changes(event=None):
         if save.instate(["!disabled"]): 
