@@ -24,6 +24,11 @@ key_labels = ['First Name', 'Middle Name', 'Last Name', 'Nickname', 'birthdate',
           'Address', 'age', 'Religion', 'Coffin', 'Amount', 'Gov. Assistance',
           'Mortuary Plan', 'Mortuary Plan Amount', 'Accessories']
 
+widgets = { 'cget("text")': ['id', 'age', 'coffin'],
+            'entry.get()': ['birthdate', 'deathdate'],
+            'get()': ['first_name', 'middle_name', 'last_name', 'nickname', 'religion', 'accessories' 'amount', 'gov_ass', 'mor_plan_amount']}
+
+
 def calc_age(key, entries, event=None):
     style = tb.Style()
     style.configure("invalid.TEntry", foreground="red", font=("Tahoma", 12 ,"bold"))
@@ -257,35 +262,88 @@ def edit_form(data):
     frame1 = tb.Frame(in_sframe, style=INFO)
     frame1.grid(row=1, column=0, padx=10, pady=0, sticky="nsew")
 
-
     def check_changes(key, entries):
         style = tb.Style()
         style.configure("invalid.TEntry", foreground="red", font=("Tahoma", 12, "bold"))
         style.configure("changed.TEntry", foreground="green", font=("Tahoma", 12, "bold"))
         style.configure("unchanged.TEntry", foreground="black")
-            
+
+        get_entry_vals(key, entries)
+
+
+    def check_changess(key, entries):
+        style = tb.Style()
+        style.configure("invalid.TEntry", foreground="red", font=("Tahoma", 12, "bold"))
+        style.configure("changed.TEntry", foreground="green", font=("Tahoma", 12, "bold"))
+        style.configure("unchanged.TEntry", foreground="black")
+
         if key in ['birthdate', 'deathdate']: 
-            str_val = entries[key].entry.get().strip()
-            if check_vals(key, str_val) == True:
-                if compare_data(key) == True:
-                    calc_age(key, entries)
-                    entries[key].configure(style = "unchanged.TEntry")
-                else:
-                    entries[key].configure(style = "changed.TEntry")
-            else:
+            text = entries[key].entry.get().strip()
+            if check_vals(key, text) != True:
                 entries[key].configure(style="invalid.TEntry")
+                save.config(state="disabled")
         elif key == 'age':
-            str_val = entries[key].cget("text")
+            text = entries[key].cget("text")
+            calc_age(key, entries)
             print(compare_data(key))
+        elif key in ['amount', 'gov_ass', 'mor_plan_amount']:
+            text = entries[key].get()
+            if check_vals(key, text) != True:
+                entries[key].configure(style="invalid.TEntry")
+                save.config(state="disabled")
+        elif key == 'coffin':
+            text = entries[key].cget('text')
+            if check_vals(key, text) != True:
+                entries[key].configure(style="invalid.TEntry")
+                save.config(state="disabled")
         else:
-            str_val = entries[key].get()
-            if check_vals(key, str_val) == True:
-                if compare_data(key) == True:
-                    entries[key].config(style = "unchanged.TEntry")
-                else:
-                    entries[key].config(style = "changed.TEntry")
-            else:
+            text = entries[key].get()
+            if check_vals(key, text) != True:
                 entries[key].config(style = "invalid.TEntry")
+                save.config(state="disabled")
+
+        if check_vals(key, text) == True and compare_data(key) == True:
+            entries[key].configure(style = "unchanged.TEntry")
+            save.config(state="disabled")
+        else:
+            diff = compare_data(key)
+            for i in diff:
+                entries[i].configure(style="changed.TEntry")
+
+    def check_changesss(key, entries):
+        style = tb.Style()
+        style.configure("invalid.TEntry", foreground="red", font=("Tahoma", 12, "bold"))
+        style.configure("changed.TEntry", foreground="green", font=("Tahoma", 12, "bold"))
+        style.configure("unchanged.TEntry", foreground="black")
+
+        text = (entries[key].entry.get().strip() if key in ['birthdate', 'deathdate'] else
+                entries[key].cget("text") if key in ['age', 'coffin'] else
+                entries[key].get())
+
+        if key == 'age':
+            print(compare_data(key))
+            return
+
+        if not check_vals(key, text):
+            entries[key].configure(style="invalid.TEntry")
+            save.config(state="disabled")
+            return
+
+        comparison = compare_data(key)
+        if comparison is True:
+            if key in ['birthdate', 'deathdate']:
+                calc_age(key, entries)
+            style_name = "unchanged.TEntry"
+            save_state = "disabled"
+        else:
+            style_name = "changed.TEntry"
+            save_state = "normal"
+            if isinstance(comparison, list):
+                for i in comparison:
+                    entries[i].configure(style=style_name)
+                return
+        entries[key].configure(style=style_name)
+        save.config(state=save_state)
 
     for i, (key, value) in enumerate(data.items()):
         label = tb.Label(frame1, text=key.replace('_', ' ').title() + ":", font=("Arial", 12, "bold"), style="Custom.TLabel")
@@ -311,6 +369,13 @@ def edit_form(data):
             style.configure('TMenubutton', font=('Tahoma', 12), width=26, foreground="black", background="white")
             entry = tb.OptionMenu(frame1, def_val, *options, style='TMenubutton')
             def_val.set(value)
+        elif key in ['amount', 'gov_ass', 'mor_plan_amount']:
+            entry = tb.Entry(frame1, font=('Arial', 12), width=30)
+            if value != 'None':
+                x = format(int(value),",")
+                entry.insert(0,str(x))
+            else:
+                entry.insert(0,str(value))
         else:
             entry = tb.Entry(frame1, font=('Arial', 12), width=30)
             entry.insert(0,str(value))
@@ -322,38 +387,61 @@ def edit_form(data):
         if key in ['birthdate','deathdate']:
             entries[key].bind("<FocusOut>", lambda event, k=key: check_changes(k, entries))       
 
-    def get_entry_vals():
+    def get_entry_vals(key, entries):
         new_data = {}
         for key, entry in entries.items():
             if  key in ['birthdate', 'deathdate']:
                 new_data[key] = entry.entry.get() 
-            elif key in ['id', 'age']:
+            elif key in ['id','age', 'coffin']:
                  new_data[key] = entry.cget("text")
-            elif isinstance(entry, tb.Entry):
+            elif key in ['amount', 'gov_ass', 'mor_plan_amount']:
+                new_data[key] = int(entries[key].get().replace(",",""))
+            else:
                  new_data[key] = entry.get()  
-        return new_data
+        check_vals(new_data)
+        # for key in new_data:
+        #     result = check_vals(key, new_data)
+        #     if not result:
+        #         print(f"Validation failed for {key}")
+        #         # return None  # Or handle as needed
+        # return new_data
 
     
-    def check_vals(key, str_val):
+    def check_vals(new_data):
+        # print(f"Received key: {key}")
+        print(f"Received new_data: {new_data}")
         types = {
-            r"^[a-zA-Z-. ]+$": ["first_name", "middle_name", "last_name", "nickname", "address", "religion", "coffin", "accessories"],
+            r"^[0-9]+$" : 'id',
+            r"^[a-zA-Z-. ]+$": ["first_name", "middle_name", "last_name", "nickname", "religion", "coffin", "accessories"],
+            r"^[a-zA-Z0-9-., ]+$": "address",
             r"^(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])/(19|20)\d{2}$": ["birthdate", "deathdate"],
-            r"^[0-9]+$": ["age", "amount", "gov_ass", "mor_plan_amount"]
+            r"^[0-9,]+$": ["age", "amount", "gov_ass", "mor_plan_amount"]
         }
-        pattern = next((k for k, v in types.items() if key in v), None)
-        if pattern is None: return False
-        result = bool(re.fullmatch(pattern,str(str_val))) # returns True or False
-        print(f'{str_val}: {result}')
-        return result
+        for key in new_data.keys():
+            pattern = next((k for k, v in types.items() if key in v), None)
+            if pattern is None: return False
+            result = bool(re.fullmatch(pattern,str(new_data[key]))) # returns True or False
+            # print(f'{new_data[key]}: {result}')
+            if result == False:
+                print(f'{new_data[key]}: {result}')
+            else:
+                # print(f'{new_data[key]}: {result}')
+                compare_data(key, new_data)
 
-    def compare_data(key):
+    def compare_data(key, new_data):
         id = data['id']
         old_data = get_client_id(id)
-        new_data = get_entry_vals()
-        if old_data[key] == new_data[key]:
-            return True
-        else:
-            return False
+        if old_data.keys() != new_data.keys():
+                return 'keys dont match!'
+                
+        diff_key = {}
+        for key in old_data:
+            if old_data[key] != new_data[key]:  # Count differences, not similarities
+                diff_key[key] = next((k for k, v in widgets.items() if key in v), None)
+        if diff_key:
+            # print(' '.join(f'entries[{key}].{access if access else "unknown"}' for key, access in diff_key.items()))
+            result = (f'entries[{key}].{access}' for key, access in diff_key.items())
+            print(result)
             
     def save_changes(event=None):
         if save.instate(["!disabled"]): 
