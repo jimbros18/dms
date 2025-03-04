@@ -24,9 +24,9 @@ key_labels = ['First Name', 'Middle Name', 'Last Name', 'Nickname', 'birthdate',
           'Address', 'age', 'Religion', 'Coffin', 'Amount', 'Gov. Assistance',
           'Mortuary Plan', 'Mortuary Plan Amount', 'Accessories']
 
-widgets = { 'cget("text")': ['id', 'age', 'coffin'],
-            'entry.get()': ['birthdate', 'deathdate'],
-            'get()': ['first_name', 'middle_name', 'last_name', 'nickname', 'religion', 'accessories' 'amount', 'gov_ass', 'mor_plan_amount']}
+widgets = { '.cget("text")': ['id', 'age', 'coffin'],
+            '.entry.get()': ['birthdate', 'deathdate'],
+            '.get()': ['first_name', 'middle_name', 'last_name', 'nickname', 'religion', 'address','accessories' 'amount', 'gov_ass', 'mor_plan','mor_plan_amount']}
 
 
 def calc_age(key, entries, event=None):
@@ -46,12 +46,8 @@ def calc_age(key, entries, event=None):
             age = deathdate.year - birthdate.year
             if (deathdate.month, deathdate.day) < (birthdate.month, birthdate.day):
                 age -= 1
-            print(f"Age: {age} years old")
+            # print(f"Age: {age} years old")
             entries['age'].config(text=age, foreground = "white", font = ("Tahoma", 12))
-        # except ValueError as e:
-        #     # Handle invalid date format or out-of-range dates
-        #     # print(f"Error: {e}")
-        #     entries['age'].config(text="Invalid date", style="invalid.TEntry")
 
 def login():
         admin = "king"
@@ -268,7 +264,20 @@ def edit_form(data):
         style.configure("changed.TEntry", foreground="green", font=("Tahoma", 12, "bold"))
         style.configure("unchanged.TEntry", foreground="black")
 
-        get_entry_vals(key, entries)
+        calc_age(key, entries,)
+        res = check_vals(key, entries)
+        print(res)
+        # if result:
+        #     for i, (key, value) in enumerate(result.items()):
+        #         if key == 'modified':
+        #             entries[value].configure(style='changed.TEntry')
+        #             save.config(state='normal')
+        #         elif key == 'invalids':
+        #             entries[value].configure(style='invalid.TEntry')
+        #             save.config(state='disabled')
+        # else:
+        #     save.config(state='disabled')
+        
 
 
     def check_changess(key, entries):
@@ -395,38 +404,38 @@ def edit_form(data):
             elif key in ['id','age', 'coffin']:
                  new_data[key] = entry.cget("text")
             elif key in ['amount', 'gov_ass', 'mor_plan_amount']:
-                new_data[key] = int(entries[key].get().replace(",",""))
+                new_data[key] = int(entry.get().replace(",",""))
             else:
                  new_data[key] = entry.get()  
-        check_vals(new_data)
-        # for key in new_data:
-        #     result = check_vals(key, new_data)
-        #     if not result:
-        #         print(f"Validation failed for {key}")
-        #         # return None  # Or handle as needed
-        # return new_data
+        return new_data
 
     
-    def check_vals(new_data):
-        # print(f"Received key: {key}")
-        print(f"Received new_data: {new_data}")
+    def check_vals(key, entries):
+        new_data = get_entry_vals(key, entries)
         types = {
             r"^[0-9]+$" : 'id',
-            r"^[a-zA-Z-. ]+$": ["first_name", "middle_name", "last_name", "nickname", "religion", "coffin", "accessories"],
+            r"^[a-zA-Z-. ]+$": ["first_name", "middle_name", "last_name", "nickname", "religion", "coffin", "accessories", 'mor_plan'],
             r"^[a-zA-Z0-9-., ]+$": "address",
             r"^(0[1-9]|1[0-2])/(0[1-9]|[12]\d|3[01])/(19|20)\d{2}$": ["birthdate", "deathdate"],
             r"^[0-9,]+$": ["age", "amount", "gov_ass", "mor_plan_amount"]
         }
-        for key in new_data.keys():
-            pattern = next((k for k, v in types.items() if key in v), None)
-            if pattern is None: return False
-            result = bool(re.fullmatch(pattern,str(new_data[key]))) # returns True or False
-            # print(f'{new_data[key]}: {result}')
-            if result == False:
-                print(f'{new_data[key]}: {result}')
-            else:
-                # print(f'{new_data[key]}: {result}')
-                compare_data(key, new_data)
+        res = {}
+        invalids = []
+        
+        pattern = next((k for k, v in types.items() if key in v), None)
+        if pattern is None: return False
+        result = bool(re.fullmatch(pattern,str(new_data[key]))) # returns True or False
+        if result == False:
+            print(f'check_vals | {key} : {new_data[key]}: {result}')
+            invalids.append(key)
+        elif result == True:
+            # print(f'check_vals | {key} : {new_data[key]}: {result}')
+            diff_key = [compare_data(key, new_data)]
+            res  = {
+                "modified": diff_key,
+                "invalids": invalids
+            }
+        return res
 
     def compare_data(key, new_data):
         id = data['id']
@@ -434,14 +443,15 @@ def edit_form(data):
         if old_data.keys() != new_data.keys():
                 return 'keys dont match!'
                 
-        diff_key = {}
-        for key in old_data:
+        diff_key = []
+        for key in old_data.keys():
             if old_data[key] != new_data[key]:  # Count differences, not similarities
-                diff_key[key] = next((k for k, v in widgets.items() if key in v), None)
+                # diff = next((k for k, v in widgets.items() if key in v), None)
+                diff_key.append(key)
         if diff_key:
-            # print(' '.join(f'entries[{key}].{access if access else "unknown"}' for key, access in diff_key.items()))
-            result = (f'entries[{key}].{access}' for key, access in diff_key.items())
-            print(result)
+            # print(f'modified keys: {list(diff_key.keys())}')
+            return diff_key
+
             
     def save_changes(event=None):
         if save.instate(["!disabled"]): 
