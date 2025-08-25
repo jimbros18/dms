@@ -338,7 +338,7 @@ def edit_form(data):
             elif key in ['id','age', 'coffin']:
                  new_data[key] = entry.cget("text")
             elif key in ['amount', 'gov_ass', 'mor_plan_amount']:
-                new_data[key] = int(entry.get().replace(",",""))
+                new_data[key] = entry.get()
             else:
                  new_data[key] = entry.get()  
         return new_data
@@ -377,12 +377,23 @@ def edit_form(data):
                     res['modified'].remove(key)
                 if key in res["invalids"]:
                     res["invalids"].remove(key)
-
         return res
-
+    formatted = {}
     def compare_data(key, new_data):
         id = data['id']
         old_data = get_client_id(id)
+
+        new_values = get_entry_vals(key, entries)
+        for k, v in new_values.items():
+            if k in ['id',"age", "amount", "gov_ass", "mor_plan_amount"]:
+                if isinstance(v, str):
+                    num = v.replace(',', '')
+                    formatted[k] = int(num)
+                else:
+                    formatted[k] = int(v)
+            else:
+                formatted[k] = v
+
         if old_data.keys() != new_data.keys():
             return 'keys dont match!'
         if old_data[key] != new_data[key]:
@@ -390,12 +401,12 @@ def edit_form(data):
 
             
     def save_changes(event=None):
+        id = data['id']
+        # old_data = get_client_id(id)
         if save.instate(["!disabled"]): 
-            new_values = get_entry_vals()
-            values = list(new_values.values())
-            print("Updating data:", new_values)
-            update_info(new_values)
-            id = data['id']
+            # values = list(new_values.values())
+            print("Updating data:", formatted)
+            update_info(formatted)
             client_form(id)
         else:
             print("Save button is disabled")

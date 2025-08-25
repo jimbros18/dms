@@ -1,10 +1,12 @@
 import pandas as pd
 import sqlite3
+import numpy as np
 
-def get_db():
+def get_clients():
     connection = sqlite3.connect("./DB/clientDB.sqlite3")
     df = pd.read_sql_query("SELECT * FROM client;", connection)
-    return df
+    records = df.replace({np.nan: None}).to_dict(orient='records')
+    return records
 
 def get_keys():
     connection = sqlite3.connect("./DB/clientDB.sqlite3")
