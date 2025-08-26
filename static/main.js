@@ -1,4 +1,5 @@
 const btn = document.getElementById("run")
+const list = document.getElementById("list")
 
 async function postClientData() {
     try {
@@ -29,4 +30,15 @@ async function postClientData() {
 // Call the function to send the request
 btn.addEventListener("click", async () => {
     const data = await postClientData();
-})
+    // Clear old list
+    list.innerHTML = "";
+
+    // Check if clients exist in response
+    if (data.clients) {
+        data.clients.forEach(client => {
+            const h3 = document.createElement("h3");
+            h3.textContent = JSON.stringify(client); // or client.name
+            list.appendChild(h3);
+        });
+    }
+});
