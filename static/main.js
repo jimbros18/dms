@@ -2,25 +2,25 @@ const btn = document.getElementById("run");
 const tableBody = document.getElementById("clientBody");
 
 async function fetchClients() {
-    try {
-        const response = await fetch('/clients', {
-            method: 'GET',
-            headers: { 'Content-Type': 'application/json' },
-        });
+	try {
+		const response = await fetch("/clients", {
+			method: "GET",
+			headers: { "Content-Type": "application/json" },
+		});
 
-        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+		if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
-        const data = await response.json();
-        console.log('Response from server:', data);
+		const data = await response.json();
+		console.log("Response from server:", data);
 
-        // Clear previous rows
-        tableBody.innerHTML = "";
+		// Clear previous rows
+		tableBody.innerHTML = "";
 
-        // Loop clients and add rows
-        data.clients.forEach(client => {
-            const row = document.createElement("tr");
+		// Loop clients and add rows
+		data.clients.forEach((client) => {
+			const row = document.createElement("tr");
 
-            row.innerHTML = `
+			row.innerHTML = `
                 <td>${client.id}</td>
                 <td>${client.first_name}</td>
                 <td>${client.middle_name}</td>
@@ -38,12 +38,11 @@ async function fetchClients() {
                 <td>${client.gov_ass}</td>
                 <td>${client.amount}</td>
             `;
-            tableBody.appendChild(row);
-        });
-
-    } catch (error) {
-        console.error('Error fetching clients:', error.message);
-    }
+			tableBody.appendChild(row);
+		});
+	} catch (error) {
+		console.error("Error fetching clients:", error.message);
+	}
 }
 
 btn.addEventListener("click", fetchClients);
