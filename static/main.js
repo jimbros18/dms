@@ -1,44 +1,49 @@
-const btn = document.getElementById("run")
-const list = document.getElementById("list")
+const btn = document.getElementById("run");
+const tableBody = document.getElementById("clientBody");
 
-async function postClientData() {
+async function fetchClients() {
     try {
-        const response = await fetch('http://127.0.0.1:8000/clients', {
+        const response = await fetch('/clients', {
             method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            // body: JSON.stringify()
+            headers: { 'Content-Type': 'application/json' },
         });
 
-        // Check if the response is OK (status 200-299)
-        if (!response.ok) {
-            throw new Error(`HTTP error! Status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
 
-        // Parse the JSON response
         const data = await response.json();
-        console.log('Response from server:', data)
+        console.log('Response from server:', data);
 
-        // Handle the response data as needed
-        return data;
+        // Clear previous rows
+        tableBody.innerHTML = "";
+
+        // Loop clients and add rows
+        data.clients.forEach(client => {
+            const row = document.createElement("tr");
+
+            row.innerHTML = `
+                <td>${client.id}</td>
+                <td>${client.first_name}</td>
+                <td>${client.middle_name}</td>
+                <td>${client.last_name}</td>
+                <td>${client.nickname}</td>
+                <td>${client.age}</td>
+                <td>${client.birthdate}</td>
+                <td>${client.deathdate}</td>
+                <td>${client.address}</td>
+                <td>${client.religion}</td>
+                <td>${client.coffin}</td>
+                <td>${client.accessories}</td>
+                <td>${client.mor_plan}</td>
+                <td>${client.mor_plan_amount}</td>
+                <td>${client.gov_ass}</td>
+                <td>${client.amount}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+
     } catch (error) {
-        console.error('Error making request:', error.message);
+        console.error('Error fetching clients:', error.message);
     }
 }
 
-// Call the function to send the request
-btn.addEventListener("click", async () => {
-    const data = await postClientData();
-    // Clear old list
-    list.innerHTML = "";
-
-    // Check if clients exist in response
-    if (data.clients) {
-        data.clients.forEach(client => {
-            const h3 = document.createElement("h3");
-            h3.textContent = JSON.stringify(client); // or client.name
-            list.appendChild(h3);
-        });
-    }
-});
+btn.addEventListener("click", fetchClients);

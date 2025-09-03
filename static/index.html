@@ -3,11 +3,54 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CLIENT</title>
+    <title>Lord Anthony Client Management System</title>
+    <link rel="stylesheet" href="/static/styles.css.">
 </head>
 <body>
-    <button id="run">RUN</button>
-    <div id="list"></div>
+    <div class="container">
+        <!-- Navbar -->
+        <nav class="sidebar">
+            <ul>
+                <li><a href="#">Clients</a></li>
+                <li><a href="#">Payments</a></li>
+                <li><a href="#">Schedules</a></li>
+                <li><a href="#">Plans</a></li>
+                <li><a href="#">Settings</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+         <main class="content">
+            <h1>Lord Anthony Client Management System</h1><br>
+            <h2>Client List</h2><br>
+                <button id="run">Show Clients</button>
+                    <table id="clientTable" border="1">
+                        <thead>
+                            <tr>
+                            <th>ID</th>
+                            <th>First Name</th>
+                            <th>Middle Name</th>
+                            <th>Last Name</th>
+                            <th>Nickname</th>
+                            <th>Age</th>
+                            <th>Birthdate</th>
+                            <th>Deathdate</th>
+                            <th>Address</th>
+                            <th>Religion</th>
+                            <th>Coffin</th>
+                            <th>Accessories</th>
+                            <th>Plan</th>
+                            <th>Plan Amount</th>
+                            <th>Gov. Assistance</th>
+                            <th>Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientBody">
+                        </tbody>
+                    </table>
+         </main>
+    </div>
+    
     <script src="/static/main.js"></script>
 </body>
 </html>

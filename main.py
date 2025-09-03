@@ -11,12 +11,13 @@ origins = [
     "http://127.0.0.1:5500",
     "http://localhost:5500",
     "http://127.0.0.1:8000",
-    "http://192.168.1.100:8000",  # replace with your LAN IP
+    "http://192.168.100.7:8000",  # replace with your LAN IP
 ]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],       # allow only these origins
+    # allow_origins=origins,       # allow only these origins
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],         # allow all HTTP methods
     allow_headers=["*"],         # allow all headers
